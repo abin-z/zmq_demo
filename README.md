@@ -65,6 +65,19 @@ ZeroMQ 内置了多种通信模型，其中最核心的是：
 
 **ROUTER / DEALER（高级异步路由）**
 
+---
+
+### 四种模型对比
+
+| 模型          | 特点         | 是否同步 | 适合场景   |
+| ------------- | ------------ | -------- | ---------- |
+| REQ/REP       | 请求响应     | 同步     | RPC        |
+| PUB/SUB       | 消息广播     | 异步     | 状态推送   |
+| PUSH/PULL     | 任务分发     | 异步     | 并行处理   |
+| ROUTER/DEALER | 高级异步路由 | 异步     | 高并发系统 |
+
+
+
 # 一、REQ / REP（请求-响应模型）
 
 这是最基础、最容易理解的模式。
@@ -113,32 +126,64 @@ send
 
 这是它的重要特点。
 
-------
-
 ### 3. 示例
 
 客户端：
 
 ```cpp
-zmq::socket_t socket(ctx, zmq::socket_type::req);
+#include <zmq.hpp>
+#include <iostream>
 
-socket.connect("tcp://127.0.0.1:5555");
+int main()
+{
+    zmq::context_t context(1);
 
-socket.send(zmq::buffer("hello"));
+    zmq::socket_t socket(context, zmq::socket_type::req);
 
-socket.recv(reply);
+    socket.connect("tcp://localhost:5555");
+
+    socket.send(
+        zmq::buffer("hello"),
+        zmq::send_flags::none);
+
+    zmq::message_t reply;
+
+    socket.recv(reply);
+
+    std::cout << reply.to_string()
+              << std::endl;
+}
 ```
 
 服务端：
 
 ```cpp
-zmq::socket_t socket(ctx, zmq::socket_type::rep);
+#include <zmq.hpp>
+#include <iostream>
 
-socket.bind("tcp://*:5555");
+int main()
+{
+    zmq::context_t context(1);
 
-socket.recv(req);
+    zmq::socket_t socket(context, zmq::socket_type::rep);
 
-socket.send(zmq::buffer("world"));
+    socket.bind("tcp://*:5555");
+
+    while (true)
+    {
+        zmq::message_t request;
+
+        socket.recv(request);
+
+        std::cout << "recv: "
+                  << request.to_string()
+                  << std::endl;
+
+        socket.send(
+            zmq::buffer("world"),
+            zmq::send_flags::none);
+    }
+}
 ```
 
 ------
@@ -403,3 +448,320 @@ IMU数据
 ```
 股票价格广播
 ```
+
+
+
+# 三、PUSH / PULL（任务分发模型）
+
+PUSH / PULL 本质上是：
+
+```
+生产者 - 消费者模型
+```
+
+适用于：
+
+- 任务队列
+- 并行计算
+- 图像处理
+- AI 推理
+- 视频处理流水线
+
+------
+
+### 1. 通信结构
+
+```
+Producer (PUSH)
+      |
+      +----> Worker1 (PULL)
+      +----> Worker2 (PULL)
+      +----> Worker3 (PULL)
+```
+
+------
+
+### 2. 工作原理
+
+PUSH Socket：
+
+```
+负责分发任务
+```
+
+PULL Socket：
+
+```
+负责接收任务
+```
+
+ZeroMQ 内部会自动进行：
+
+```
+负载均衡（Round Robin）
+```
+
+例如：
+
+```
+task1 -> worker1
+task2 -> worker2
+task3 -> worker3
+```
+
+------
+
+### 3. C++ 示例
+
+**生产者**
+
+```cpp
+#include <zmq.hpp>
+
+int main()
+{
+    zmq::context_t context(1);
+
+    zmq::socket_t push(context, zmq::socket_type::push);
+
+    push.bind("tcp://*:5557");
+
+    while (true)
+    {
+        push.send(
+            zmq::buffer("task"),
+            zmq::send_flags::none);
+    }
+}
+```
+
+**消费者**
+
+```cpp
+#include <zmq.hpp>
+#include <iostream>
+
+int main()
+{
+    zmq::context_t context(1);
+
+    zmq::socket_t pull(context, zmq::socket_type::pull);
+
+    pull.connect("tcp://localhost:5557");
+
+    while (true)
+    {
+        zmq::message_t msg;
+
+        pull.recv(msg);
+
+        std::cout << msg.to_string()
+                  << std::endl;
+    }
+}
+```
+
+------
+
+### 4. 优点
+
+**自动负载均衡**
+
+无需自己实现：
+
+- 调度器
+- 任务队列
+- Worker 管理
+
+**易于扩容**
+
+新增 Worker：
+
+```
+直接 connect 即可
+```
+
+------
+
+**非常适合并行任务**
+
+例如：
+
+- 图像识别
+- 视频转码
+- 数据处理
+
+### 5. 缺点
+
+**单向通信**
+
+PUSH/PULL：
+
+```
+不支持返回结果
+```
+
+因此不适合 RPC。
+
+**Worker 崩溃可能导致任务丢失**
+
+默认情况下：
+
+```
+不保证任务可靠性
+```
+
+# 四、ROUTER / DEALER（高级异步模型）
+
+ROUTER / DEALER 是 ZeroMQ 最核心、最强大的通信模式。
+
+它解决了：
+
+```
+REQ/REP 同步阻塞
+```
+
+的问题。
+
+适用于：
+
+- 高并发服务器
+- 异步 RPC
+- 聊天系统
+- 网关系统
+- 分布式系统
+
+### 1. Dealer 是什么
+
+Dealer 可以理解为：
+
+```
+异步版 REQ
+```
+
+与 REQ 不同：
+
+Dealer 可以：
+
+```cpp
+send();
+send();
+send();
+```
+
+连续发送消息，而无需等待回复。
+
+### 2. Router 是什么
+
+Router 可以理解为：
+
+```
+带路由能力的异步服务端
+```
+
+它能够识别：
+
+```
+每一个客户端
+```
+
+因为每个连接都具有：
+
+```
+identity
+```
+
+### 3. 通信结构
+
+```
+Dealer1 \
+Dealer2  ---> Router
+Dealer3 /
+```
+
+Router 可以知道：
+
+```
+消息来自谁
+```
+
+并且可以：
+
+```
+定向回复
+```
+
+### 4. Router 收到的数据结构
+
+Router 收到的消息：
+
+```
+[identity][message]
+```
+
+其中：
+
+```
+identity
+```
+
+表示客户端 ID。
+
+因此：
+
+```
+Router 可以实现消息路由
+```
+
+### 5. 最大特点
+
+**完全异步**
+
+无需：
+
+```
+send -> recv
+```
+
+严格同步。
+
+------
+
+**支持高并发**
+
+非常适合：
+
+- Reactor 模型
+- 高性能服务器
+
+------
+
+### 支持代理架构
+
+例如：
+
+```
+Frontend Router
+        ↓
+Backend Dealer
+        ↓
+Worker Pool
+```
+
+这已经非常接近：
+
+```
+现代微服务网关
+```
+
+的设计思想。
+
+### 6. 典型场景
+
+高性能 RPC
+
+聊天服务器
+
+消息网关
+
+分布式任务系统
