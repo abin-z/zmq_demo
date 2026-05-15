@@ -45,5 +45,6 @@ rules.ninja
 
 # 缓存文件
 .cache
+.deps
 # 生成的编译命令文件
 compile_commands.json
