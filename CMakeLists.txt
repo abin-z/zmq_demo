@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
+project(ZMQ_DEMO LANGUAGES C CXX)
+
 # 生成 compile_commands.json 文件（用于 clangd、clang-tidy 等工具）
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
