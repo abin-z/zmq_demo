@@ -57,4 +57,5 @@ FetchContent_Declare(
 set(CPPZMQ_BUILD_TESTS OFF CACHE BOOL "Build cppzmq tests" FORCE)
 FetchContent_MakeAvailable(cppzmq)
 
-add_subdirectory(reqrep_basic)
+add_subdirectory(basic_reqrep)
+add_subdirectory(basic_pushpull)
