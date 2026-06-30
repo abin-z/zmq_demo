@@ -27,9 +27,8 @@ int main()
       break;
     }
 
-    zmq::message_t message(msg.size());
-    memcpy(message.data(), msg.c_str(), msg.size());
-    pusher.send(message, zmq::send_flags::none);
+    // 使用 zmq::buffer() 自动处理大小和数据
+    pusher.send(zmq::buffer(msg), zmq::send_flags::none);
 
     fmt::print("发送: {}\n", msg);
   }
