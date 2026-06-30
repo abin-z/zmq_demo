@@ -2,6 +2,8 @@
 
 #include <iostream>
 #include <string>
+
+#include <fmt/format.h>
 #include <zmq.hpp>
 
 int main()
@@ -15,8 +17,8 @@ int main()
   // 绑定 IPC 地址
   pusher.bind("ipc:///tmp/push_pull.ipc");
 
-  std::cout << "PUSH 端已启动，绑定到 ipc:///tmp/push_pull.ipc" << std::endl;
-  std::cout << "输入消息 (输入 'q' 退出):" << std::endl;
+  fmt::print("PUSH 端已启动，绑定到 ipc:///tmp/push_pull.ipc\n");
+  fmt::print("输入消息 (输入 'q' 退出):\n");
 
   std::string msg;
   while (std::getline(std::cin, msg))
@@ -30,7 +32,7 @@ int main()
     memcpy(message.data(), msg.c_str(), msg.size());
     pusher.send(message, zmq::send_flags::none);
 
-    std::cout << "发送: " << msg << std::endl;
+    fmt::print("发送: {}\n", msg);
   }
 
   return 0;

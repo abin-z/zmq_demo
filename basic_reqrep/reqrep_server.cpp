@@ -1,7 +1,9 @@
 #include <unistd.h>  // for unlink()
 
-#include <iostream>
+#include <cstdio>
 #include <string>
+
+#include <fmt/format.h>
 #include <zmq.hpp>
 
 int main()
@@ -17,23 +19,23 @@ int main()
 
   socket.bind(ipc_path);
 
-  std::cout << "REP 已绑定 " << ipc_path << "，等待请求...\n";
-  std::cout << "提示: 请确保客户端使用相同的 IPC 地址连接\n";
+  fmt::print("REP 已绑定 {}，等待请求...\n", ipc_path);
+  fmt::print("提示: 请确保客户端使用相同的 IPC 地址连接\n");
 
   while (true)
   {
     zmq::message_t request;
     if (!socket.recv(request, zmq::recv_flags::none))
     {
-      std::cerr << "接收消息失败\n";
+      fmt::print(stderr, "接收消息失败\n");
       return 1;
     }
 
     const std::string req_text(static_cast<char *>(request.data()), request.size());
-    std::cout << "收到: " << req_text << " (大小: " << request.size() << " 字节)\n";
+    fmt::print("收到: {} (大小: {} 字节)\n", req_text, request.size());
 
     const std::string reply = "world";
     socket.send(zmq::buffer(reply), zmq::send_flags::none);
-    std::cout << "回复: " << reply << " 已发送\n";
+    fmt::print("回复: {} 已发送\n", reply);
   }
 }

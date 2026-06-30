@@ -1,5 +1,8 @@
+#include <cstdio>
 #include <iostream>
 #include <string>
+
+#include <fmt/format.h>
 #include <zmq.hpp>
 
 int main()
@@ -10,20 +13,20 @@ int main()
   // 连接到 IPC 地址（注意是 connect，不是 bind）
   puller.connect("ipc:///tmp/push_pull.ipc");
 
-  std::cout << "PULL 端已启动，连接到 ipc:///tmp/push_pull.ipc" << std::endl;
-  std::cout << "等待接收消息..." << std::endl;
+  fmt::print("PULL 端已启动，连接到 ipc:///tmp/push_pull.ipc\n");
+  fmt::print("等待接收消息...\n");
 
   while (true)
   {
     zmq::message_t message;
     if (!puller.recv(message, zmq::recv_flags::none))
     {
-      std::cerr << "接收消息失败" << std::endl;
+      fmt::print(stderr, "接收消息失败\n");
       break;
     }
 
     std::string msg(static_cast<char *>(message.data()), message.size());
-    std::cout << "收到: " << msg << " (大小: " << message.size() << " 字节)" << std::endl;
+    fmt::print("收到: {} (大小: {} 字节)\n", msg, message.size());
   }
 
   return 0;
