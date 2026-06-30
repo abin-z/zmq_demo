@@ -1,8 +1,8 @@
+#include <fmt/format.h>
+
 #include <cstdio>
 #include <iostream>
 #include <string>
-
-#include <fmt/format.h>
 #include <zmq.hpp>
 
 int main()

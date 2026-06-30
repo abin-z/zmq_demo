@@ -1,9 +1,8 @@
+#include <fmt/format.h>
 #include <unistd.h>  // for unlink()
 
 #include <cstdio>
 #include <string>
-
-#include <fmt/format.h>
 #include <zmq.hpp>
 
 int main()
