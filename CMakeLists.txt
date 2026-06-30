@@ -46,4 +46,15 @@ FetchContent_MakeAvailable(fmt)
 # target_link_libraries() 显式声明依赖关系。
 link_libraries(fmt::fmt)
 
+# 添加 cppzmq 库（注意：它会自动依赖 libzmq，需要系统已安装 libzmq3-dev）
+FetchContent_Declare(
+    cppzmq
+    GIT_REPOSITORY https://github.com/zeromq/cppzmq.git
+    GIT_TAG v4.11.0   # 或者用最新稳定版本
+)
+
+# 关闭 cppzmq 自带测试，避免因为 Catch2 等测试依赖导致构建失败
+set(CPPZMQ_BUILD_TESTS OFF CACHE BOOL "Build cppzmq tests" FORCE)
+FetchContent_MakeAvailable(cppzmq)
+
 add_subdirectory(reqrep_basic)
