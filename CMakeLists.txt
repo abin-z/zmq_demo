@@ -59,3 +59,4 @@ FetchContent_MakeAvailable(cppzmq)
 
 add_subdirectory(basic_reqrep)
 add_subdirectory(basic_pushpull)
+add_subdirectory(basic_pubsub)
